@@ -1,4 +1,5 @@
 import json
+import os
 
 import numpy as np
 import torch
@@ -9,17 +10,18 @@ from torchvision import transforms
 
 
 class newdataset(Dataset):
-    def __init__(self, data_num, data_set, len_s, transform=None):
+    def __init__(self, data_num, data_set, len_s, base_path=None, transform=None):
         self.num = data_num
         self.dataset = data_set
         self.length = len_s
         self.transform = transform
+        self.base_path = base_path if base_path is not None else ''
         # stuff
 
     def __getitem__(self, index):
         # stuff
-        img_name = 'new_img/{}/{}.png'.format(self.dataset, index)
-        label_name = 'new_label/{}/{}.json'.format(self.dataset, index)
+        img_name = os.path.join(self.base_path,'new_img', self.dataset, f'{index}.png')
+        label_name = os.path.join(self.base_path,'new_label', self.dataset, f'{index}.json')
         try:
             img = Image.open(img_name).convert('RGB')
         except FileNotFoundError:
@@ -80,9 +82,9 @@ class newdataset(Dataset):
         return self.num  # of how many examples(images?) you have
 
 
-def load_data(data_num, data_set, len_s, batch_size):
+def load_data(data_num, data_set, len_s, batch_size, base_path=None):
     trans = transforms.ToTensor()
-    datas = newdataset(data_num, data_set, len_s, trans)
+    datas = newdataset(data_num, data_set, len_s, transform=trans, base_path=base_path)
     Dataloader = torch.utils.data.DataLoader(datas, batch_size=batch_size,
                                              shuffle=True, drop_last=False)
     return Dataloader

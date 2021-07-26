@@ -19,11 +19,12 @@ def train(config, pretrained=None):
     log_dir = config['log_dir']
     prefix = config['prefix']
     num = config['num']
+    base_path = config['base_path']
 
     print('Using gpus: {}'.format(devices))
     torch.cuda.set_device(devices[0])
 
-    Dataloader = load_data(num, 'train', 60, batch_size)
+    Dataloader = load_data(num, 'train', 60, batch_size, base_path=base_path)
     len_dl = len(Dataloader)
     print(len_dl)
 
@@ -82,8 +83,8 @@ def train(config, pretrained=None):
                 #     print(
                 #         'epoch{} step{}:{}'.format(epoch, step,
                 # param_group['lr']))
-        train_iou = test(net, 'train',10)
-        val_iou = test(net, 'val',10)
+        train_iou = test(net, 'train', 10, base_path=base_path)
+        val_iou = test(net, 'val', 10, base_path=base_path)
         for key, val in train_iou.items():
             writer.add_scalar('train/iou_{}'.format(key), val, epoch *
                               len_dl)
@@ -112,6 +113,7 @@ if __name__ == '__main__':
     parser.add_argument('--pretrained', '-p', type=str, help='Pretrained '
                                                              'Model Location')
     parser.add_argument('--config', dest='config_file', help='Config File')
+    parser.add_argument('--base_path', type=str, help='Base Path', default='.')
     args = parser.parse_args()
     config_from_args = args.__dict__
     config_file = config_from_args.pop('config_file')

@@ -15,7 +15,7 @@ from utils.utils import img2tensor
 from utils.utils import iou, getbboxfromkps
 
 
-def test(net, dataset, num=float('inf')):
+def test(net, dataset, num=float('inf'), base_path=None):
     '''
     Test on validation dataset
     :param net: net to evaluate
@@ -27,7 +27,9 @@ def test(net, dataset, num=float('inf')):
     dtype = torch.cuda.FloatTensor
     dtype_t = torch.cuda.LongTensor
 
-    dir_name = 'save_img/test/'
+    base_path = base_path if base_path is not None else './'
+
+    dir_name = os.path.join(base_path, 'save_img', 'test')
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
 
@@ -43,9 +45,9 @@ def test(net, dataset, num=float('inf')):
         de[cls] = 0.0
 
     count = 0
-    files = glob('img/{}/*/*.png'.format(dataset))
+    files = glob(f'{base_path}'+f'img/{dataset}/*/*.png')
     for ind, file in enumerate(files):
-        json_file = 'label' + file[3:-15] + 'gtFine_polygons.json'
+        json_file = os.path.join(base_path, 'label', file.split('img/')[-1].replace('_leftImg8bit.png','') + '_gtFine_polygons.json')
         json_object = json.load(open(json_file))
         h = json_object['imgHeight']
         w = json_object['imgWidth']
