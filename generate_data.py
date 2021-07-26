@@ -7,19 +7,21 @@ import numpy as np
 from PIL import Image
 
 parser = argparse.ArgumentParser(description='manual to this script')
+parser.add_argument('--base_path', type=str, default=".")
 parser.add_argument('--data', type=str, default="train")
 args = parser.parse_args()
 
 selected_classes = ['person', 'car', 'truck', 'bicycle', 'motorcycle', 'rider',
                     'bus', 'train']
 dataset = args.data
-files = glob('img/{}/*/*.png'.format(dataset))
+base_path = args.base_path
+files = glob(f'{base_path}/img/{dataset}/*/*.png')
 count = 0
 max_count = 0
 ind = 0
 
-img_dir = './new_img/{}'.format(dataset)
-label_dir = './new_label/{}'.format(dataset)
+img_dir = f'{base_path}/new_img/{dataset}'
+label_dir = f'{base_path}/new_label/{dataset}'
 if not os.path.exists(img_dir):
     os.makedirs(img_dir)
 if not os.path.exists(label_dir):
@@ -27,7 +29,7 @@ if not os.path.exists(label_dir):
 
 
 for file in files:
-    json_file = 'label' + file[3:-15] + 'gtFine_polygons.json'
+    json_file = os.path.join(base_path, 'label', file.split('img/')[-1].replace('_leftImg8bit.png','') + '_gtFine_polygons.json')
     json_object = json.load(open(json_file))
     h = json_object['imgHeight']
     w = json_object['imgWidth']
@@ -51,7 +53,7 @@ for file in files:
             I = Image.open(file)
             I_obj = I.crop(box=(min_col, min_row, max_col, max_row))
             I_obj_new = I_obj.resize((224, 224), Image.BILINEAR)
-            I_obj_new.save('new_img/' + dataset + '/' + str(count) + '.png',
+            I_obj_new.save(os.path.join(base_path, 'new_img/' + dataset + '/' + str(count) + '.png'),
                            'PNG')
             point_count = 0
             last_index_a = -1
@@ -64,7 +66,7 @@ for file in files:
                 index_a = np.maximum(0, np.minimum(223, index_a))
                 index_b = np.maximum(0, np.minimum(223, index_b))
                 dic['polygon'].append([index_a, index_b])
-            with open('new_label/' + dataset + '/' + str(count) + '.json',
+            with open(os.path.join(base_path, 'new_label/' + dataset + '/' + str(count) + '.json'),
                       'w') as jsonfile:
                 json.dump(dic, jsonfile)
             count += 1
