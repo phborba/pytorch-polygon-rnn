@@ -86,5 +86,6 @@ def load_data(data_num, data_set, len_s, batch_size, base_path=None):
     trans = transforms.ToTensor()
     datas = newdataset(data_num, data_set, len_s, transform=trans, base_path=base_path)
     Dataloader = torch.utils.data.DataLoader(datas, batch_size=batch_size,
-                                             shuffle=True, drop_last=False)
+                                             shuffle=True, drop_last=True,
+                                             num_workers=8, prefetch_factor=64)
     return Dataloader
