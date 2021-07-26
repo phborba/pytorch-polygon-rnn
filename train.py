@@ -10,7 +10,8 @@ from config_tools import get_config
 from data import load_data
 from model import PolygonNet
 from test import test
-
+from tqdm import tqdm
+from time import sleep
 
 def train(config, pretrained=None):
     devices = config['gpu_id']
@@ -48,55 +49,59 @@ def train(config, pretrained=None):
 
     epoch_r = int(300000 / len_dl)
     for epoch in range(epoch_r):
-        for step, data in enumerate(Dataloader):
-            scheduler.step()
-            x = Variable(data[0].type(dtype))
-            x1 = Variable(data[1].type(dtype))
-            x2 = Variable(data[2].type(dtype))
-            x3 = Variable(data[3].type(dtype))
-            ta = Variable(data[4].type(dtype_t))
-            optimizer.zero_grad()
+        with tqdm(enumerate(Dataloader), unit='batch', total=len_dl) as tepoch:
+            tepoch.set_description(f"Epoch {epoch}")
+            for step, data in tepoch:
+                scheduler.step()
+                x = Variable(data[0].type(dtype))
+                x1 = Variable(data[1].type(dtype))
+                x2 = Variable(data[2].type(dtype))
+                x3 = Variable(data[3].type(dtype))
+                ta = Variable(data[4].type(dtype_t))
+                optimizer.zero_grad()
 
-            r = net(x, x1, x2, x3)
+                r = net(x, x1, x2, x3)
 
-            result = r.contiguous().view(-1, 28 * 28 + 3)
-            target = ta.contiguous().view(-1)
+                result = r.contiguous().view(-1, 28 * 28 + 3)
+                target = ta.contiguous().view(-1)
 
-            loss = loss_function(result, target)
+                loss = loss_function(result, target)
 
-            loss.backward()
+                loss.backward()
 
-            result_index = torch.argmax(result, 1)
-            correct = (target == result_index).type(dtype).sum().item()
-            acc = correct * 1.0 / target.shape[0]
+                result_index = torch.argmax(result, 1)
+                correct = (target == result_index).type(dtype).sum().item()
+                acc = correct * 1.0 / target.shape[0]
 
-            #        scheduler.step(loss)
-            optimizer.step()
+                #        scheduler.step(loss)
+                optimizer.step()
 
-            writer.add_scalar('train/loss', loss, epoch * len_dl + step)
-            writer.add_scalar('train/accuracy', acc, epoch * len_dl + step)
+                writer.add_scalar('train/loss', loss, epoch * len_dl + step)
+                writer.add_scalar('train/accuracy', acc, epoch * len_dl + step)
 
-            if step % 100 == 0:
+                if step % 100 == 0:
+                    torch.save(net.state_dict(),
+                            prefix + '_' + str(num) + '.pth')
+                    # for param_group in optimizer.param_groups:
+                    #     print(
+                    #         'epoch{} step{}:{}'.format(epoch, step,
+                    # param_group['lr']))
+                tepoch.set_postfix(loss=loss.item(), accuracy=acc)
+            train_iou = test(net, 'train', 10, base_path=base_path)
+            val_iou = test(net, 'val', 10, base_path=base_path)
+            for key, val in train_iou.items():
+                writer.add_scalar('train/iou_{}'.format(key), val, epoch *
+                                len_dl)
+            for key, val in val_iou.items():
+                writer.add_scalar('val/iou_{}'.format(key), val, epoch *
+                                len_dl)
+            print('iou score on training set:{}'.format(train_iou))
+            print('iou score on test set:{}'.format(val_iou))
+
+            if epoch % 5 == 0 and len_dl > 200:
                 torch.save(net.state_dict(),
-                           prefix + '_' + str(num) + '.pth')
-                # for param_group in optimizer.param_groups:
-                #     print(
-                #         'epoch{} step{}:{}'.format(epoch, step,
-                # param_group['lr']))
-        train_iou = test(net, 'train', 10, base_path=base_path)
-        val_iou = test(net, 'val', 10, base_path=base_path)
-        for key, val in train_iou.items():
-            writer.add_scalar('train/iou_{}'.format(key), val, epoch *
-                              len_dl)
-        for key, val in val_iou.items():
-            writer.add_scalar('val/iou_{}'.format(key), val, epoch *
-                              len_dl)
-        print('iou score on training set:{}'.format(train_iou))
-        print('iou score on test set:{}'.format(val_iou))
-
-        if epoch % 5 == 0 and len_dl > 200:
-            torch.save(net.state_dict(),
-                       prefix + str(epoch) + '_' + str(num) + '.pth')
+                        prefix + str(epoch) + '_' + str(num) + '.pth')
+            sleep(0.1)
 
     writer.close()
 

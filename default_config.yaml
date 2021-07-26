@@ -1,9 +1,9 @@
 train:
   gpu_id: [0]
-  num: 16
+  num: 52468
   prefix: /data/experiment_data/polygon-rnn/checkpoint/train1
   log_dir: /data/experiment_data/polygon-rnn/runs/train1
-  batch_size: 32
+  batch_size: 16
   lr: 0.001
 
 #  pretrained:
