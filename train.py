@@ -50,7 +50,7 @@ def train(config, pretrained=None):
     epoch_r = int(300000 / len_dl)
     for epoch in range(epoch_r):
         with tqdm(enumerate(Dataloader), unit='batch', total=len_dl) as tepoch:
-            tepoch.set_description(f"Epoch {epoch}")
+            tepoch.set_description(f"Epoch {epoch+1}")
             for step, data in tepoch:
                 scheduler.step()
                 x = Variable(data[0].type(dtype))
