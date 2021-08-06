@@ -82,8 +82,9 @@ def test(net, dataset, num=float('inf'), base_path=None):
                     if (label == 784):
                         break
                     vertex = (
-                        ((label % 28) * 8.0 + 4) / scale_w + min_col, (
-                            (int(label / 28)) * 8.0 + 4) / scale_h + min_row)
+                        ((label % 28) * 8.0 + 4) / scale_w + min_col,
+                        ((int(label / 28)) * 8.0 + 4) / scale_h + min_row
+                    )
                     vertices1.append(vertex)
 
                 try:
